@@ -15,7 +15,6 @@ Este proyecto implementa una REST API con **FastAPI** y **MongoDB Atlas**, gesti
 
 ---
 
-
 ## Instalación y ejecución
 
 ```bash
