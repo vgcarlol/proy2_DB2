@@ -2,6 +2,7 @@
 
 Este proyecto implementa una REST API con **FastAPI** y **MongoDB Atlas**, gestiona restaurantes, sus menús, pedidos y reseñas de usuarios.
 
+Documento Fase 1: https://uvggt-my.sharepoint.com/:w:/g/personal/val221164_uvg_edu_gt/EdlV7dPWSZFChZSEh0_iuS8BWpOpzNI-IzMfm_XB0ufFdg?e=qhdysv 
 ---
 
 ##  Tecnologías utilizadas
