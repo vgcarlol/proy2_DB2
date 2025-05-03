@@ -1,0 +1,21 @@
+db.ordenes.aggregate([
+  { $unwind: "$articulos" },
+  { $group: {
+      _id: "$articulos.articulo_id",
+      total_vendido: { $sum: "$articulos.cantidad" }
+  }},
+  { $sort: { total_vendido: -1 } },
+  { $limit: 10 },
+  { $lookup: {
+      from: "articulos_menu",
+      localField: "_id",
+      foreignField: "_id",
+      as: "articulo"
+  }},
+  { $unwind: "$articulo" },
+  { $project: {
+      _id: 0,
+      articulo: "$articulo.nombre",
+      total_vendido: 1
+  }}
+])

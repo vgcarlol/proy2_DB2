@@ -50,3 +50,36 @@ async def eliminar_resena(id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Reseña no encontrada")
     return {"mensaje": "Reseña eliminada"}
+
+@router.get("/top-restaurantes")
+async def top_restaurantes():
+    pipeline = [
+        {
+            "$group": {
+                "_id": "$restaurante_id",
+                "promedio_calificacion": { "$avg": "$calificacion" },
+                "total_resenas": { "$sum": 1 }
+            }
+        },
+        { "$sort": { "promedio_calificacion": -1 } },
+        { "$limit": 10 },
+        {
+            "$lookup": {
+                "from": "restaurantes",
+                "localField": "_id",
+                "foreignField": "_id",
+                "as": "restaurante"
+            }
+        },
+        { "$unwind": "$restaurante" },
+        {
+            "$project": {
+                "_id": 0,
+                "nombre": "$restaurante.nombre",
+                "promedio_calificacion": 1,
+                "total_resenas": 1
+            }
+        }
+    ]
+    resultado = await db.resenas.aggregate(pipeline).to_list(10)
+    return resultado

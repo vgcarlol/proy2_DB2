@@ -52,3 +52,29 @@ async def eliminar_orden(id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
     return {"mensaje": "Orden eliminada"}
+
+@router.get("/top-platillos")
+async def top_platillos():
+    pipeline = [
+        {"$unwind": "$articulos"},
+        {"$group": {
+            "_id": "$articulos.articulo_id",
+            "total_vendido": {"$sum": "$articulos.cantidad"}
+        }},
+        {"$sort": {"total_vendido": -1}},
+        {"$limit": 10},
+        {"$lookup": {
+            "from": "articulos_menu",
+            "localField": "_id",
+            "foreignField": "_id",
+            "as": "articulo"
+        }},
+        {"$unwind": "$articulo"},
+        {"$project": {
+            "_id": 0,
+            "articulo": "$articulo.nombre",
+            "total_vendido": 1
+        }}
+    ]
+    resultado = await db.ordenes.aggregate(pipeline).to_list(10)
+    return resultado
