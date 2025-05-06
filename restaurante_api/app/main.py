@@ -1,16 +1,26 @@
 from fastapi import FastAPI
-from routes import restaurantes, usuarios, articulos_menu, ordenes, resenas
+from app.routes.usuarios import router as usuarios_router
+from app.routes.restaurantes import router as restaurantes_router
+from app.routes.articulos_menu import router as menu_router
+from app.routes.ordenes import router as ordenes_router
+from app.routes.resenas import router as resenas_router
+from app.indices import crear_indices  # Importar función de índices
 
+app = FastAPI(title="API Restaurante - Proyecto 2")
 
-app = FastAPI(title="Sistema de Gestión de Pedidos y Reseñas")
-
+# Ruta de prueba de conexión
 @app.get("/")
 async def root():
-    return {"mensaje": "Conexión activa con MongoDB Atlas"}
+    return {"mensaje": "API de Restaurante conectada a MongoDB Atlas"}
 
-# Incluir rutas
-app.include_router(restaurantes.router)
-app.include_router(usuarios.router)
-app.include_router(articulos_menu.router)
-app.include_router(ordenes.router)
-app.include_router(resenas.router)
+# Registrar todos los routers
+app.include_router(usuarios_router)
+app.include_router(restaurantes_router)
+app.include_router(menu_router)
+app.include_router(ordenes_router)
+app.include_router(resenas_router)
+
+# Crear índices al iniciar
+@app.on_event("startup")
+async def startup_event():
+    await crear_indices()
