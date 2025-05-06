@@ -81,27 +81,46 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     async function guardarEdicion(e) {
-      e.preventDefault();
-      if (!editingId) return;
-      const payload = {
-        nombre:      editarNombreInput.value,
-        email:       editarEmailInput.value,
-        "contraseña": editarContraInput.value || undefined,
-        direccion:   editarDireccionInput.value,
-        telefono:    editarTelefonoInput.value
-      };
-      const res = await fetch(API_URL + editingId, {
-        method:  "PUT",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        alert("Error al editar usuario");
-        return;
+        e.preventDefault();
+        if (!editingId) return;
+      
+        // 1) Recupera el usuario completo desde tu array
+        const original = dataGlobal.find(u => u._id === editingId);
+        if (!original) {
+          return alert("Usuario no encontrado");
+        }
+      
+        // 2) Construye el payload — si no metes nada en el campo, reusa la contraseña original
+        const payload = {
+          nombre:      editarNombreInput.value.trim(),
+          email:       editarEmailInput.value.trim(),
+          contraseña:  editarContraInput.value
+                         ? editarContraInput.value
+                         : original.contraseña,
+          direccion:   editarDireccionInput.value.trim(),
+          telefono:    editarTelefonoInput.value.trim()
+        };
+      
+        try {
+          const res = await fetch(API_URL + editingId, {
+            method:  "PUT",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify(payload)
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => null);
+            console.error("Error al editar usuario:", err);
+            return alert("Error al editar usuario:\n" + JSON.stringify(err?.detail || err || res.status, null, 2));
+          }
+          modal.style.display = "none";
+          editingId = null;
+          await fetchUsuarios();
+        } catch (err) {
+          console.error("Excepción al editar usuario:", err);
+          alert("Error de red al editar usuario:\n" + err.message);
+        }
       }
-      modal.style.display = "none";
-      await fetchUsuarios();
-    }
+      
   
     function aplicarFiltros() {
       const n = filtroNombre.value.toLowerCase();

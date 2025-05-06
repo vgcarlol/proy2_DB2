@@ -120,27 +120,43 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     async function guardarEdicion(e) {
-      e.preventDefault();
-      const payload = {
-        usuario_id:     undefined,  // no cambiamos usuario/restaurante/orden
-        restaurante_id: undefined,
-        orden_id:       undefined,
-        calificacion:   parseInt(editarCalifInput.value,10),
-        comentario:     editarComentario.value,
-        fecha:          new Date(editarFechaInput.value).toISOString()
-      };
-      const res = await fetch(API + editingId, {
-        method:  "PUT",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(()=>null);
-        return alert("Error al editar:\n" + JSON.stringify(err?.detail||err||res.status));
+        e.preventDefault();
+    
+        // 1) Busca la reseña completa en nuestro array para recuperar los IDs
+        const original = data.find(x => x._id === editingId);
+        if (!original) {
+          return alert("Reseña no encontrada");
+        }
+    
+        // 2) Construye el payload incluyendo los IDs originales
+        const payload = {
+          usuario_id:     original.usuario_id,
+          restaurante_id: original.restaurante_id,
+          // el campo orden_id es opcional, envíalo si existía
+          orden_id:       original.orden_id || null,
+          calificacion:   parseInt(editarCalifInput.value, 10),
+          comentario:     editarComentario.value.trim(),
+          fecha:          new Date(editarFechaInput.value).toISOString()
+        };
+    
+        try {
+          const res = await fetch(API + editingId, {
+            method:  "PUT",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify(payload)
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => null);
+            return alert("Error al editar:\n" + JSON.stringify(err?.detail || err || res.status, null, 2));
+          }
+          modal.style.display = "none";
+          await fetchResenas();
+        } catch (err) {
+          console.error("Excepción al editar reseña:", err);
+          alert("Error de red al editar reseña:\n" + err.message);
+        }
       }
-      modal.style.display = "none";
-      await fetchResenas();
-    }
+    
   
     function aplicarFiltros() {
       const fR = filtroResta.value.toLowerCase();
