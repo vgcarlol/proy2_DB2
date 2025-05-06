@@ -4,6 +4,7 @@ from app.routes.restaurantes import router as restaurantes_router
 from app.routes.articulos_menu import router as menu_router
 from app.routes.ordenes import router as ordenes_router
 from app.routes.resenas import router as resenas_router
+from fastapi.middleware.cors import CORSMiddleware
 from app.index_setup import crear_indices  # Importar función de índices
 
 app = FastAPI(title="API Restaurante - Proyecto 2")
@@ -12,6 +13,15 @@ app = FastAPI(title="API Restaurante - Proyecto 2")
 @app.get("/")
 async def root():
     return {"mensaje": "API de Restaurante conectada a MongoDB Atlas"}
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Registrar todos los routers
 app.include_router(usuarios_router)

@@ -120,17 +120,36 @@ document.addEventListener("DOMContentLoaded", function() {
             });
     }
 
+    // Función para obtener lat/lon desde dirección usando Nominatim (OpenStreetMap)
+    async function getCoordinatesFromAddress(address) {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+        const data = await response.json();
+        if (data && data.length > 0) {
+            return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+        } else {
+            console.warn("No se encontraron coordenadas para la dirección:", address);
+            return { lat: 0, lon: 0 };  // Coordenadas por defecto si no se encuentra
+        }
+    }
+
     // Evento para agregar restaurante
-    form.addEventListener("submit", function(e) {
+    form.addEventListener("submit", async function(e) {
         e.preventDefault();
         const nombre = nombreInput.value;
         const direccion = direccionInput.value;
         const telefono = telefonoInput.value;
 
+        const ubicacion = await getCoordinatesFromAddress(direccion);
+
         fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nombre, direccion, telefono })
+            body: JSON.stringify({
+                nombre,
+                direccion,
+                tipoComida: "General",
+                ubicacion: ubicacion
+            })
         })
         .then(response => {
             if (!response.ok) throw new Error('Error al crear restaurante');
@@ -145,17 +164,24 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     // Subir cambios desde el popup
-    formEditar.addEventListener("submit", function(e) {
+    formEditar.addEventListener("submit", async function(e) {
         e.preventDefault();
         const nombre = editarNombre.value;
         const direccion = editarDireccion.value;
         const telefono = editarTelefono.value;
 
         if (editingId) {
+            const ubicacion = await getCoordinatesFromAddress(direccion);
+
             fetch(API_URL + editingId, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nombre, direccion, telefono })
+                body: JSON.stringify({
+                    nombre,
+                    direccion,
+                    tipoComida: "General",
+                    ubicacion: ubicacion
+                })
             })
             .then(response => {
                 if (!response.ok) throw new Error('Error al actualizar');
