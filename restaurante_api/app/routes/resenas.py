@@ -14,11 +14,15 @@ async def crear_resena(resena: ResenaCreate):
     creada = await db.resenas.find_one({"_id": result.inserted_id})
     return creada
 
-
+# --- Limite y skip ordenamiento- CRUD ---
 @router.get("/", response_model=List[Resena])
-async def listar_resenas():
-    resenas = await db.resenas.find().to_list(length=100)
-    return resenas
+async def listar_resenas(skip: int = 0, limit: int = 100):
+    return await db.resenas.find().sort("fecha", -1).skip(skip).limit(limit).to_list(length=limit)
+
+#@router.get("/", response_model=List[Resena])
+#async def listar_resenas():
+#    resenas = await db.resenas.find().to_list(length=100)
+#    return resenas
 
 
 @router.get("/restaurante/{restaurante_id}", response_model=List[Resena])
@@ -100,3 +104,11 @@ async def top_restaurantes():
     ]
     resultado = await db.resenas.aggregate(pipeline).to_list(length=10)
     return resultado
+# proyecciones - CRUD
+@router.get("/resumen", response_model=List[dict])
+async def resumen_resenas(skip: int = 0, limit: int = 100):
+    cursor = db.resenas.find(
+        {},
+        {"usuario_id": 1, "restaurante_id": 1, "calificacion": 1, "_id": 0}
+    ).sort("calificacion", -1).skip(skip).limit(limit)
+    return await cursor.to_list(length=limit)

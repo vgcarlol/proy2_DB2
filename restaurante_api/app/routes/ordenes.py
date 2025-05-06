@@ -16,11 +16,13 @@ async def crear_orden(orden: OrdenCreate):
 
 
 @router.get("/", response_model=List[Orden])
-async def listar_ordenes():
-    ordenes = await db.ordenes.find().to_list(length=100)
-    return ordenes
+#async def listar_ordenes():
+    #ordenes = await db.ordenes.find().to_list(length=100)
+    #return ordenes
+async def listar_ordenes(skip: int = 0, limit: int = 100):#Limite y skip - CRUD ---
+    return await db.ordenes.find().skip(skip).limit(limit).to_list(length=limit)
 
- 
+# Filtros - - CRUD
 @router.get("/usuario/{usuario_id}", response_model=List[Orden])
 async def ordenes_por_usuario(usuario_id: str):
     if not ObjectId.is_valid(usuario_id):
@@ -28,6 +30,7 @@ async def ordenes_por_usuario(usuario_id: str):
     
     ordenes = await db.ordenes.find(
         {"usuario_id": ObjectId(usuario_id)}
+        # Filtros - CRUD
     ).sort("fecha", -1).to_list(length=100)
     return ordenes
 
@@ -66,3 +69,11 @@ async def eliminar_orden(id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
     return {"mensaje": "Orden eliminada"}
+# proyecciones - CRUD
+@router.get("/resumen", response_model=List[dict])
+async def resumen_ordenes(skip: int = 0, limit: int = 100):
+    cursor = db.ordenes.find(
+        {},
+        {"usuario_id": 1, "fecha": 1, "total": 1, "_id": 0}
+    ).sort("fecha", -1).skip(skip).limit(limit)
+    return await cursor.to_list(length=limit)

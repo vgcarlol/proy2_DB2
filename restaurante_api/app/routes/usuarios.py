@@ -19,9 +19,12 @@ async def crear_usuario(usuario: UsuarioCreate):
 
 
 @router.get("/", response_model=List[Usuario])
-async def listar_usuarios():
-    usuarios = await db.usuarios.find().to_list(length=100)
-    return usuarios
+#async def listar_usuarios():
+    #usuarios = await db.usuarios.find().to_list(length=100)
+    #return usuarios
+#--- Limite y skip - CRUD ---
+async def listar_usuarios(skip: int = 0, limit: int = 100):
+    return await db.usuarios.find().skip(skip).limit(limit).to_list(length=limit)
 
 
 @router.get("/{id}", response_model=Usuario)
@@ -59,3 +62,11 @@ async def eliminar_usuario(id: str):
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return {"mensaje": "Usuario eliminado"}
  
+# proyecciones - CRUD
+@router.get("/resumen", response_model=List[dict])
+async def resumen_usuarios(skip: int = 0, limit: int = 100):
+    cursor = db.usuarios.find(
+        {},
+        {"nombre": 1, "email": 1, "_id": 0}
+    ).skip(skip).limit(limit)
+    return await cursor.to_list(length=limit)

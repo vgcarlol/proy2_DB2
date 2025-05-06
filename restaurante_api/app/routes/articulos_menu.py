@@ -15,11 +15,16 @@ async def crear_articulo(articulo: ArticuloMenuCreate):
 
 
 @router.get("/", response_model=List[ArticuloMenu])
-async def listar_articulos():
-    articulos = await db.articulos_menu.find().to_list(length=100)
-    return articulos
+#async def listar_articulos():
+#    articulos = await db.articulos_menu.find().to_list(length=100)
+#    return articulos
+# # --- Limite y skip y ordenamiento - CRUD ---
+async def listar_articulos(skip: int = 0, limit: int = 100):
+    return await db.articulos_menu.find().sort("nombre", 1).skip(skip).limit(limit).to_list(length=limit)
 
 
+
+#Filtros - CRUD
 @router.get("/restaurante/{restaurante_id}", response_model=List[ArticuloMenu])
 async def articulos_por_restaurante(restaurante_id: str):
     if not ObjectId.is_valid(restaurante_id):
@@ -65,3 +70,12 @@ async def eliminar_articulo(id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Artículo no encontrado")
     return {"mensaje": "Artículo eliminado"}
+
+# proyecciones - CRUD
+@router.get("/resumen", response_model=List[dict])
+async def resumen_articulos(skip: int = 0, limit: int = 100):
+    cursor = db.articulos_menu.find(
+        {},
+        {"nombre": 1, "precio": 1, "categoria": 1, "_id": 0}
+    ).sort("nombre", 1).skip(skip).limit(limit)
+    return await cursor.to_list(length=limit)

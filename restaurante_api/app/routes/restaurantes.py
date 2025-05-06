@@ -3,6 +3,7 @@ from bson import ObjectId
 from typing import List
 from app.database import db
 from app.models.restaurante import Restaurante, RestauranteCreate
+import json  # <-- importante
 
 router = APIRouter(prefix="/restaurantes", tags=["Restaurantes"])
 
@@ -14,11 +15,23 @@ async def crear_restaurante(data: RestauranteCreate):
     return nuevo
 
 
+"""@router.get("/", response_model=List[Restaurante])
+#async def listar_restaurantes():
+#    restaurantes = await db.restaurantes.find().to_list(length=100)
+#    print(restaurantes)  
+#    return restaurantes
+# --- Limite - CRUD ---
+async def listar_restaurantes(skip: int = 0, limit: int = 101):
+    return await db.restaurantes.find().sort("nombre", 1).skip(skip).limit(limit).to_list(length=limit)
+"""
+## --- Limite y skip y ordenamiento - CRUD ---
 @router.get("/", response_model=List[Restaurante])
-async def listar_restaurantes():
-    restaurantes = await db.restaurantes.find().to_list(length=100)
-    print(restaurantes)  
-
+async def listar_restaurantes(skip: int = 0, limit: int = 100):
+    restaurantes = await db.restaurantes.find().sort("nombre", 1).skip(skip).limit(limit).to_list(length=limit)
+    for r in restaurantes:
+        r["_id"] = str(r["_id"])
+        if isinstance(r["ubicacion"], str):  # Si está guardado como JSON string
+            r["ubicacion"] = json.loads(r["ubicacion"])  # Convertir a dict
     return restaurantes
 
 
@@ -72,3 +85,12 @@ async def eliminar_restaurante(id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Restaurante no encontrado")
     return {"mensaje": "Restaurante eliminado"}
+# proyecciones - CRUD
+@router.get("/resumen", response_model=List[dict])
+async def resumen_restaurantes(skip: int = 0, limit: int = 100):
+    cursor = db.restaurantes.find(
+        {},
+        {"nombre": 1, "tipoComida": 1, "_id": 0}
+    ).skip(skip).limit(limit)
+    return await cursor.to_list(length=limit)
+
