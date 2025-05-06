@@ -1,41 +1,53 @@
 from fastapi import APIRouter, HTTPException
-from models.resena import Resena
-from database import db
 from bson import ObjectId
+from typing import List
+
+from app.models.resena import Resena, ResenaCreate
+from app.database import db
 
 router = APIRouter(prefix="/resenas", tags=["Reseñas"])
 
-@router.post("/")
-async def crear_resena(resena: Resena):
+
+@router.post("/", response_model=Resena)
+async def crear_resena(resena: ResenaCreate):
     result = await db.resenas.insert_one(resena.dict())
-    return {"mensaje": "Reseña creada", "id": str(result.inserted_id)}
+    creada = await db.resenas.find_one({"_id": result.inserted_id})
+    return creada
 
-@router.get("/")
+
+@router.get("/", response_model=List[Resena])
 async def listar_resenas():
-    resenas = await db.resenas.find().to_list(100)
-    for r in resenas:
-        r["_id"] = str(r["_id"])
+    resenas = await db.resenas.find().to_list(length=100)
     return resenas
 
-@router.get("/restaurante/{restaurante_id}")
+
+@router.get("/restaurante/{restaurante_id}", response_model=List[Resena])
 async def resenas_por_restaurante(restaurante_id: str):
+    if not ObjectId.is_valid(restaurante_id):
+        raise HTTPException(status_code=400, detail="ID de restaurante inválido")
+    
     resenas = await db.resenas.find({
-        "restaurante_id": restaurante_id
-    }).sort("calificacion", -1).to_list(100)
-    for r in resenas:
-        r["_id"] = str(r["_id"])
+        "restaurante_id": ObjectId(restaurante_id)
+    }).sort("calificacion", -1).to_list(length=100)
     return resenas
 
-@router.get("/{id}")
+
+@router.get("/{id}", response_model=Resena)
 async def obtener_resena(id: str):
+    if not ObjectId.is_valid(id):
+        raise HTTPException(status_code=400, detail="ID inválido")
+
     resena = await db.resenas.find_one({"_id": ObjectId(id)})
     if not resena:
         raise HTTPException(status_code=404, detail="Reseña no encontrada")
-    resena["_id"] = str(resena["_id"])
     return resena
 
-@router.put("/{id}")
-async def actualizar_resena(id: str, datos: Resena):
+
+@router.put("/{id}", response_model=dict)
+async def actualizar_resena(id: str, datos: ResenaCreate):
+    if not ObjectId.is_valid(id):
+        raise HTTPException(status_code=400, detail="ID inválido")
+
     result = await db.resenas.update_one(
         {"_id": ObjectId(id)},
         {"$set": datos.dict()}
@@ -44,14 +56,19 @@ async def actualizar_resena(id: str, datos: Resena):
         raise HTTPException(status_code=404, detail="Reseña no encontrada o sin cambios")
     return {"mensaje": "Reseña actualizada"}
 
-@router.delete("/{id}")
+
+@router.delete("/{id}", response_model=dict)
 async def eliminar_resena(id: str):
+    if not ObjectId.is_valid(id):
+        raise HTTPException(status_code=400, detail="ID inválido")
+
     result = await db.resenas.delete_one({"_id": ObjectId(id)})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Reseña no encontrada")
     return {"mensaje": "Reseña eliminada"}
 
-@router.get("/top-restaurantes")
+
+@router.get("/top-restaurantes", response_model=List[dict])
 async def top_restaurantes():
     pipeline = [
         {
@@ -81,5 +98,5 @@ async def top_restaurantes():
             }
         }
     ]
-    resultado = await db.resenas.aggregate(pipeline).to_list(10)
+    resultado = await db.resenas.aggregate(pipeline).to_list(length=10)
     return resultado

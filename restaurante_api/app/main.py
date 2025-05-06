@@ -4,7 +4,7 @@ from app.routes.restaurantes import router as restaurantes_router
 from app.routes.articulos_menu import router as menu_router
 from app.routes.ordenes import router as ordenes_router
 from app.routes.resenas import router as resenas_router
-from app.indices import crear_indices  # Importar función de índices
+from app.index_setup import crear_indices  # Importar función de índices
 
 app = FastAPI(title="API Restaurante - Proyecto 2")
 
