@@ -17,6 +17,8 @@ async def crear_restaurante(data: RestauranteCreate):
 @router.get("/", response_model=List[Restaurante])
 async def listar_restaurantes():
     restaurantes = await db.restaurantes.find().to_list(length=100)
+    print(restaurantes)  
+
     return restaurantes
 
 
@@ -60,7 +62,7 @@ async def actualizar_restaurante(id: str, data: RestauranteCreate):
         raise HTTPException(status_code=404, detail="Restaurante no encontrado o sin cambios")
     return {"mensaje": "Restaurante actualizado"}
 
-
+ 
 @router.delete("/{id}", response_model=dict)
 async def eliminar_restaurante(id: str):
     if not ObjectId.is_valid(id):

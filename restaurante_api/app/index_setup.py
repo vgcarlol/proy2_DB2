@@ -3,7 +3,7 @@ from app.database import db
 async def crear_indices():
     # Restaurantes
     await db.restaurantes.create_index({ "nombre": "text" })  # Búsqueda por texto
-    await db.restaurantes.create_index({ "ubicacion": "2dsphere" })  # Búsqueda geoespacial
+    #await db.restaurantes.create_index({ "ubicacion": "2dsphere" })  # Búsqueda geoespacial
 
     # Usuarios
     await db.usuarios.create_index({ "email": 1 }, unique=True)  # Email único

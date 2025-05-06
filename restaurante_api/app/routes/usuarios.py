@@ -58,3 +58,4 @@ async def eliminar_usuario(id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return {"mensaje": "Usuario eliminado"}
+ 

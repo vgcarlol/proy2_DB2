@@ -41,7 +41,7 @@ async def obtener_articulo(id: str):
         raise HTTPException(status_code=404, detail="Artículo no encontrado")
     return articulo
 
-
+ 
 @router.put("/{id}", response_model=dict)
 async def actualizar_articulo(id: str, datos: ArticuloMenuCreate):
     if not ObjectId.is_valid(id):

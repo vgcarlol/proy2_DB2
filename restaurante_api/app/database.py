@@ -14,4 +14,4 @@ if not MONGO_URI:
 client = AsyncIOMotorClient(MONGO_URI)
 
 # Seleccionar base de datos
-db = client.get_default_database() or client["restauranteDB"]
+db = client["restauranteDB"]

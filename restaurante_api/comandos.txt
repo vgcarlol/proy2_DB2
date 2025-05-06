@@ -1,3 +1,4 @@
 dependencias:
 pip install fastapi uvicorn motor python-dotenv
 pip install email-validator
+mongodb+srv://jjcampos2003:QrI1Ktae8EVF9pcD@proyecto2.8p68wf5.mongodb.net/

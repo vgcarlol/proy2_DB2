@@ -56,7 +56,7 @@ async def actualizar_resena(id: str, datos: ResenaCreate):
         raise HTTPException(status_code=404, detail="Reseña no encontrada o sin cambios")
     return {"mensaje": "Reseña actualizada"}
 
-
+ 
 @router.delete("/{id}", response_model=dict)
 async def eliminar_resena(id: str):
     if not ObjectId.is_valid(id):

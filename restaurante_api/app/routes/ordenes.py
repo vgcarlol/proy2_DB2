@@ -8,7 +8,6 @@ from app.models.orden import Orden, OrdenCreate
 router = APIRouter(prefix="/ordenes", tags=["Órdenes"])
 
 
-# ✅ Crear orden
 @router.post("/", response_model=Orden)
 async def crear_orden(orden: OrdenCreate):
     result = await db.ordenes.insert_one(orden.dict())
@@ -16,14 +15,12 @@ async def crear_orden(orden: OrdenCreate):
     return creada
 
 
-# ✅ Listar todas las órdenes
 @router.get("/", response_model=List[Orden])
 async def listar_ordenes():
     ordenes = await db.ordenes.find().to_list(length=100)
     return ordenes
 
-
-# ✅ Listar órdenes por usuario
+ 
 @router.get("/usuario/{usuario_id}", response_model=List[Orden])
 async def ordenes_por_usuario(usuario_id: str):
     if not ObjectId.is_valid(usuario_id):
@@ -35,7 +32,6 @@ async def ordenes_por_usuario(usuario_id: str):
     return ordenes
 
 
-# ✅ Obtener orden por ID
 @router.get("/{id}", response_model=Orden)
 async def obtener_orden(id: str):
     if not ObjectId.is_valid(id):
@@ -47,7 +43,6 @@ async def obtener_orden(id: str):
     return orden
 
 
-# ✅ Actualizar orden
 @router.put("/{id}", response_model=dict)
 async def actualizar_orden(id: str, datos: OrdenCreate):
     if not ObjectId.is_valid(id):
@@ -62,7 +57,6 @@ async def actualizar_orden(id: str, datos: OrdenCreate):
     return {"mensaje": "Orden actualizada"}
 
 
-# ✅ Eliminar orden
 @router.delete("/{id}", response_model=dict)
 async def eliminar_orden(id: str):
     if not ObjectId.is_valid(id):
