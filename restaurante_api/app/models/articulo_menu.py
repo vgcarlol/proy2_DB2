@@ -1,52 +1,51 @@
 from pydantic import BaseModel, Field
 from bson import ObjectId
 from typing import Optional, Any
-from pydantic.json_schema import JsonSchemaValue
-from pydantic import GetJsonSchemaHandler
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import core_schema
+from pydantic_core.core_schema import ValidationInfo
+
 
 
 class PyObjectId(ObjectId):
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        return core_schema.json_or_python_schema(
+            python_schema=core_schema.with_info_plain_validator_function(cls.validate),
+            json_schema=core_schema.str_schema()
+        )
 
     @classmethod
-    def validate(cls, v: Any) -> ObjectId:
-        if not ObjectId.is_valid(v):
-            raise ValueError("ObjectId inválido")
-        return ObjectId(v)
-
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, core_schema: Any, handler: GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        return {"type": "string", "pattern": "^[a-fA-F0-9]{24}$"}
+    def validate(cls, v: Any, info: ValidationInfo) -> ObjectId:
+        if isinstance(v, ObjectId):
+            return v
+        if ObjectId.is_valid(v):
+            return ObjectId(v)
+        raise ValueError("ObjectId inválido")
 
 
-class ArticuloMenu(BaseModel):
-    restaurante_id: str
+class ArticuloMenuBase(BaseModel):
+    restaurante_id: PyObjectId = Field(..., description="ID del restaurante")
     nombre: str
     descripcion: str
     precio: float
     categoria: str
-    id: Optional[str] = Field(alias="_id")  # 👈 ahora acepta strings
-
-    class Config:
-        populate_by_name = True
-        json_encoders = {ObjectId: str}
-        arbitrary_types_allowed = True
-
-
-
-class ArticuloMenuCreate(ArticuloMenu):
-    pass
-
-
-class ArticuloMenu(ArticuloMenu):
-    id: Optional[PyObjectId] = Field(alias="_id")
 
     model_config = {
         "json_encoders": {ObjectId: str},
+        "arbitrary_types_allowed": True,
+    }
+
+
+class ArticuloMenuCreate(ArticuloMenuBase):
+    pass
+
+
+class ArticuloMenu(ArticuloMenuBase):
+    id: Optional[PyObjectId] = Field(alias="_id")
+
+    model_config = {
         "populate_by_name": True,
+        "json_encoders": {ObjectId: str},
         "arbitrary_types_allowed": True,
     }
