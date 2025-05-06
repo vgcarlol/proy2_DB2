@@ -77,3 +77,43 @@ async def resumen_ordenes(skip: int = 0, limit: int = 100):
         {"usuario_id": 1, "fecha": 1, "total": 1, "_id": 0}
     ).sort("fecha", -1).skip(skip).limit(limit)
     return await cursor.to_list(length=limit)
+
+
+#02_agregacion_compleja no funcional
+@router.get("/top-usuarios", response_model=List[dict])
+async def top_usuarios_por_ordenes():
+    pipeline = [
+        {"$group": {"_id": "$usuario_id", "total_ordenes": {"$sum": 1}}},
+        {"$sort": {"total_ordenes": -1}},
+        {"$limit": 5}
+    ]
+    resultado = db.ordenes.aggregate(pipeline)
+    return await resultado.to_list(length=5)
+#03_manejo_arrays funcional
+
+@router.put("/{id}/agregar-item")
+async def agregar_articulo(id: str, item: dict):
+    if not ObjectId.is_valid(id):
+        return {"error": "ID inválido"}
+    await db.ordenes.update_one(
+        {"_id": ObjectId(id)},
+        {"$push": {"articulos": item}}
+    )
+    return {"msg": "Artículo agregado"}
+
+@router.put("/{id}/quitar-item")
+async def quitar_articulo(id: str, articulo_id: str):
+    if not ObjectId.is_valid(id):
+        return {"error": "ID inválido"}
+    await db.ordenes.update_one(
+        {"_id": ObjectId(id)},
+        {"$pull": {"articulos": {"articulo_id": ObjectId(articulo_id)}}}
+    )
+    return {"msg": "Artículo eliminado"}
+#04_embebidos no funcional
+@router.get("/{id}/articulos")
+async def obtener_articulos_de_orden(id: str):
+    if not ObjectId.is_valid(id):
+        return {"error": "ID inválido"}
+    orden = await db.ordenes.find_one({"_id": ObjectId(id)}, {"articulos": 1, "_id": 0})
+    return orden or {"error": "Orden no encontrada"}

@@ -70,3 +70,14 @@ async def resumen_usuarios(skip: int = 0, limit: int = 100):
         {"nombre": 1, "email": 1, "_id": 0}
     ).skip(skip).limit(limit)
     return await cursor.to_list(length=limit)
+
+
+#agregacion_simple funcional
+@router.get("/usuarios/conteo")
+async def contar_usuarios():
+    total = await db.usuarios.count_documents({})
+    return {"total_usuarios": total}
+
+@router.get("/usuarios/correos-unicos")
+async def correos_unicos():
+    return await db.usuarios.distinct("email")
