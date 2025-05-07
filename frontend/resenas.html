@@ -7,21 +7,19 @@
   <style>
     .pagination button.active { background-color: #0d6efd; color: white; }
     .modal-custom {
-      position: fixed; z-index: 1000;
-      left: 0; top: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5); display: none;
+      position: fixed; z-index:1000;
+      left:0; top:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.5); display:none;
     }
     .modal-content-custom {
-      background: #fff; padding: 20px;
-      border: 1px solid #ccc; width: 400px;
-      margin: 100px auto; position: relative;
+      background:#fff; padding:20px;
+      border:1px solid #ccc; width:400px;
+      margin:100px auto; position:relative;
     }
-    .close-modal { position: absolute; top:5px; right:10px; cursor:pointer; }
+    .close-modal { position:absolute; top:5px; right:10px; cursor:pointer; }
   </style>
 </head>
-<body class="bg-light">
 
-<!-- Barra de navegación -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="#">Gestión de Pedidos</a>
@@ -51,65 +49,75 @@
     </div>
 </nav>
 
-  <div class="container mt-5">
-    <h1 class="text-center mb-4">Reseñas</h1>
+<body class="bg-light">
+<br>
 
-    <!-- Formulario Crear -->
-    <div class="card mb-4">
-      <div class="card-header"><h2 class="h5 mb-0">Crear Reseña</h2></div>
-      <div class="card-body">
-        <form id="formResena" class="row g-3">
-          <div class="col-md-4">
-            <input id="usuarioId" class="form-control" placeholder="Usuario ID" required>
-          </div>
-          <div class="col-md-4">
-            <input id="restauranteId" class="form-control" placeholder="Restaurante ID" required>
-          </div>
-          <div class="col-md-4">
-            <input id="ordenId" class="form-control" placeholder="Orden ID (opcional)">
-          </div>
-          <div class="col-md-3">
-            <select id="calificacion" class="form-select" required>
-              <option value="">Calificación</option>
-              <option value="1">1 estrella</option>
-              <option value="2">2 estrellas</option>
-              <option value="3">3 estrellas</option>
-              <option value="4">4 estrellas</option>
-              <option value="5">5 estrellas</option>
-            </select>
-          </div>
-          <div class="col-md-9">
-            <input id="comentario" class="form-control" placeholder="Comentario" required>
-          </div>
-          <div class="col-md-4">
-            <input id="fecha" type="date" class="form-control" required>
-          </div>
-          <div class="col-md-8 d-grid">
-            <button type="submit" class="btn btn-primary">Agregar Reseña</button>
-          </div>
-        </form>
+  <div class="container">
+    <form id="formResena" class="row g-3 mb-4">
+      <!-- SELECT USUARIO -->
+      <div class="col-md-4">
+        <label for="usuarioId" class="form-label">Usuario</label>
+        <select id="usuarioId" class="form-select" required>
+          <option value="">Cargando usuarios…</option>
+        </select>
       </div>
-    </div>
+      <!-- SELECT RESTAURANTE -->
+      <div class="col-md-4">
+        <label for="restauranteId" class="form-label">Restaurante</label>
+        <select id="restauranteId" class="form-select" required>
+          <option value="">Cargando restaurantes…</option>
+        </select>
+      </div>
+      <!-- ORDEN ID (opcional) -->
+      <div class="col-md-4">
+        <label for="ordenId" class="form-label">Orden ID (opcional)</label>
+        <input id="ordenId" class="form-control" placeholder="Ej. 624f9d…" />
+      </div>
+      <!-- CALIFICACIÓN -->
+      <div class="col-md-4">
+        <label for="calificacion" class="form-label">Calificación</label>
+        <select id="calificacion" class="form-select" required>
+          <option value="1">1 ⭐</option>
+          <option value="2">2 ⭐⭐</option>
+          <option value="3">3 ⭐⭐⭐</option>
+          <option value="4">4 ⭐⭐⭐⭐</option>
+          <option value="5">5 ⭐⭐⭐⭐⭐</option>
+        </select>
+      </div>
+      <!-- COMENTARIO -->
+      <div class="col-md-8">
+        <label for="comentario" class="form-label">Comentario</label>
+        <input id="comentario" class="form-control" placeholder="Escribe tu reseña…" required />
+      </div>
+      <!-- FECHA -->
+      <div class="col-md-4">
+        <label for="fecha" class="form-label">Fecha</label>
+        <input id="fecha" type="date" class="form-control" required />
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary w-100">Agregar Reseña</button>
+      </div>
+    </form>
 
-    <!-- Filtros -->
+    <!-- FILTROS -->
     <div class="row mb-3">
       <div class="col-md-6">
-        <input id="filtroRestaurante" class="form-control" placeholder="Filtrar por Restaurante ID">
+        <input id="filtroRestaurante" class="form-control" placeholder="Filtrar por Restaurante ID" />
       </div>
       <div class="col-md-6">
-        <input id="filtroCalificacion" class="form-control" placeholder="Filtrar por Calificación">
+        <input id="filtroCalificacion" class="form-control" placeholder="Filtrar por Calificación" />
       </div>
     </div>
 
-    <!-- Tabla -->
+    <!-- TABLA -->
     <div class="table-responsive">
-      <table id="tablaResenas" class="table table-bordered table-striped text-center align-middle">
+      <table id="tablaResenas" class="table table-bordered table-striped text-center">
         <thead class="table-dark">
           <tr>
             <th>Usuario</th>
             <th>Restaurante</th>
             <th>Orden</th>
-            <th>Calificación</th>
+            <th>Calif.</th>
             <th>Comentario</th>
             <th>Fecha</th>
             <th>Acciones</th>
@@ -119,40 +127,41 @@
       </table>
     </div>
 
-    <!-- Paginación -->
+    <!-- PAGINACIÓN -->
     <div id="pagination" class="pagination d-flex justify-content-center mt-3"></div>
   </div>
 
-  <!-- Modal Editar -->
+  <!-- MODAL EDITAR -->
   <div id="modalEditar" class="modal-custom">
     <div class="modal-content-custom">
       <span id="cerrarModal" class="close-modal">&times;</span>
-      <h3>Editar Reseña</h3>
-      <form id="formEditar" class="row g-3">
+      <h5>Editar Reseña</h5>
+      <form id="formEditar" class="row g-3 mt-2">
         <div class="col-md-6">
+          <label for="editarCalificacion" class="form-label">Calificación</label>
           <select id="editarCalificacion" class="form-select" required>
-            <option value="">Calificación</option>
-            <option value="1">1 estrella</option>
-            <option value="2">2 estrellas</option>
-            <option value="3">3 estrellas</option>
-            <option value="4">4 estrellas</option>
-            <option value="5">5 estrellas</option>
+            <option value="1">1 ⭐</option>
+            <option value="2">2 ⭐⭐</option>
+            <option value="3">3 ⭐⭐⭐</option>
+            <option value="4">4 ⭐⭐⭐⭐</option>
+            <option value="5">5 ⭐⭐⭐⭐⭐</option>
           </select>
         </div>
         <div class="col-md-6">
-          <input id="editarFecha" type="date" class="form-control" required>
+          <label for="editarFecha" class="form-label">Fecha</label>
+          <input id="editarFecha" type="date" class="form-control" required/>
         </div>
-        <div class="col-md-12">
-          <input id="editarComentario" class="form-control" placeholder="Comentario" required>
+        <div class="col-12">
+          <label for="editarComentario" class="form-label">Comentario</label>
+          <input id="editarComentario" class="form-control" required/>
         </div>
-        <div class="col-md-12 d-grid">
-          <button type="submit" class="btn btn-success">Guardar Cambios</button>
+        <div class="col-12">
+          <button type="submit" class="btn btn-success w-100">Guardar Cambios</button>
         </div>
       </form>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/resenas.js"></script>
 </body>
 </html>

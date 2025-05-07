@@ -1,10 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const API     = "http://127.0.0.1:8000/resenas/";
+    const API_RES = "http://127.0.0.1:8000/resenas/";
+    const API_USU = "http://127.0.0.1:8000/usuarios/";
+    const API_REST= "http://127.0.0.1:8000/restaurantes/";
     const perPage = 10;
   
     let data = [], page = 1, editingId = null;
   
-    // DOM refs
+    // refs DOM
     const tabla            = document.querySelector("#tablaResenas tbody");
     const pagination       = document.getElementById("pagination");
     const formCrear        = document.getElementById("formResena");
@@ -26,20 +28,49 @@ document.addEventListener("DOMContentLoaded", () => {
     const editarComentario = document.getElementById("editarComentario");
     const editarFechaInput = document.getElementById("editarFecha");
   
-    // Listeners
+    // listeners
     formCrear.addEventListener("submit", crearResena);
     formEditar.addEventListener("submit", guardarEdicion);
     cerrarModalBtn.addEventListener("click", ()=> modal.style.display = "none");
     filtroResta.addEventListener("input", aplicarFiltros);
     filtroCalif.addEventListener("input", aplicarFiltros);
   
-    // Fetch inicial
+    // arranca poblando selects y tabla
+    fetchUsuarios();
+    fetchRestaurantes();
     fetchResenas();
   
+    // trae usuarios y llena el <select>
+    async function fetchUsuarios() {
+      try {
+        let r = await fetch(API_USU);
+        let arr = await r.json();
+        usuarioInput.innerHTML = `<option value="">-- Seleccionar --</option>` +
+          arr.map(u => `<option value="${u._id}">${u.nombre}</option>`).join("");
+      } catch(err) {
+        console.error("Error cargando usuarios:", err);
+        usuarioInput.innerHTML = `<option value="">(error)</option>`;
+      }
+    }
+  
+    // trae restaurantes y llena el <select>
+    async function fetchRestaurantes() {
+      try {
+        let r = await fetch(API_REST);
+        let arr = await r.json();
+        restauranteInput.innerHTML = `<option value="">-- Seleccionar --</option>` +
+          arr.map(r => `<option value="${r._id}">${r.nombre}</option>`).join("");
+      } catch(err) {
+        console.error("Error cargando restaurantes:", err);
+        restauranteInput.innerHTML = `<option value="">(error)</option>`;
+      }
+    }
+  
+    // traer todas las reseñas
     async function fetchResenas() {
       try {
-        const res = await fetch(API);
-        data = await res.json();
+        let r = await fetch(API_RES);
+        data = await r.json();
         actualizarPaginacion();
         mostrarPagina(page);
       } catch {
@@ -47,6 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   
+    // crear nueva reseña
     async function crearResena(e) {
       e.preventDefault();
       const payload = {
@@ -54,23 +86,23 @@ document.addEventListener("DOMContentLoaded", () => {
         restaurante_id: restauranteInput.value,
         orden_id:       ordenInput.value || null,
         calificacion:   parseInt(calificacionInput.value,10),
-        comentario:     comentarioInput.value,
+        comentario:     comentarioInput.value.trim(),
         fecha:          new Date(fechaInput.value).toISOString()
       };
-      const res = await fetch(API, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(payload)
+      let res = await fetch(API_RES, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
       });
       if (!res.ok) {
-        const err = await res.json().catch(()=>null);
-        return alert("Error al crear:\n" + JSON.stringify(err?.detail||err||res.status));
+        let err = await res.json().catch(()=>null);
+        return alert("Error al crear:\n"+ JSON.stringify(err?.detail||err||res.status, null,2));
       }
       formCrear.reset();
       page = 1;
       await fetchResenas();
     }
   
+    // render de tabla + eventos
     function renderTable(arr) {
       tabla.innerHTML = "";
       if (!arr.length) {
@@ -78,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       arr.forEach(r => {
-        const tr = document.createElement("tr");
+        let tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${r.usuario_id}</td>
           <td>${r.restaurante_id}</td>
@@ -89,103 +121,84 @@ document.addEventListener("DOMContentLoaded", () => {
           <td>
             <button class="editar btn btn-sm btn-outline-primary" data-id="${r._id}">Editar</button>
             <button class="eliminar btn btn-sm btn-outline-danger"  data-id="${r._id}">Eliminar</button>
-          </td>
-        `;
+          </td>`;
         tabla.appendChild(tr);
       });
-  
-      // Borrar
-      tabla.querySelectorAll(".eliminar").forEach(btn =>
-        btn.addEventListener("click", async () => {
+      // borrar
+      tabla.querySelectorAll(".eliminar").forEach(b=>
+        b.addEventListener("click", async ()=>{
           if (!confirm("Eliminar reseña?")) return;
-          await fetch(API + btn.dataset.id, { method: "DELETE" });
-          data = data.filter(x => x._id !== btn.dataset.id);
+          await fetch(API_RES + b.dataset.id, {method:"DELETE"});
+          data = data.filter(x=> x._id!==b.dataset.id);
           actualizarPaginacion();
           mostrarPagina(page);
         })
       );
-  
-      // Editar
-      tabla.querySelectorAll(".editar").forEach(btn =>
-        btn.addEventListener("click", () => {
-          editingId = btn.dataset.id;
-          const r = data.find(x => x._id === editingId);
-          if (!r) return;
-          editarCalifInput.value    = r.calificacion;
-          editarComentario.value    = r.comentario;
-          editarFechaInput.value    = new Date(r.fecha).toISOString().substr(0,10);
-          modal.style.display        = "block";
+      // editar
+      tabla.querySelectorAll(".editar").forEach(b=>
+        b.addEventListener("click", ()=>{
+          editingId = b.dataset.id;
+          let orig = data.find(x=> x._id===editingId);
+          if (!orig) return alert("Reseña no encontrada");
+          editarCalifInput.value    = orig.calificacion;
+          editarComentario.value    = orig.comentario;
+          editarFechaInput.value    = new Date(orig.fecha).toISOString().slice(0,10);
+          modal.style.display = "block";
         })
       );
     }
   
+    // guardar cambios
     async function guardarEdicion(e) {
-        e.preventDefault();
-    
-        // 1) Busca la reseña completa en nuestro array para recuperar los IDs
-        const original = data.find(x => x._id === editingId);
-        if (!original) {
-          return alert("Reseña no encontrada");
-        }
-    
-        // 2) Construye el payload incluyendo los IDs originales
-        const payload = {
-          usuario_id:     original.usuario_id,
-          restaurante_id: original.restaurante_id,
-          // el campo orden_id es opcional, envíalo si existía
-          orden_id:       original.orden_id || null,
-          calificacion:   parseInt(editarCalifInput.value, 10),
-          comentario:     editarComentario.value.trim(),
-          fecha:          new Date(editarFechaInput.value).toISOString()
-        };
-    
-        try {
-          const res = await fetch(API + editingId, {
-            method:  "PUT",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify(payload)
-          });
-          if (!res.ok) {
-            const err = await res.json().catch(() => null);
-            return alert("Error al editar:\n" + JSON.stringify(err?.detail || err || res.status, null, 2));
-          }
-          modal.style.display = "none";
-          await fetchResenas();
-        } catch (err) {
-          console.error("Excepción al editar reseña:", err);
-          alert("Error de red al editar reseña:\n" + err.message);
-        }
+      e.preventDefault();
+      let orig = data.find(x=> x._id===editingId);
+      if (!orig) return alert("Reseña no encontrada");
+      const payload = {
+        usuario_id:     orig.usuario_id,
+        restaurante_id: orig.restaurante_id,
+        orden_id:       orig.orden_id||null,
+        calificacion:   parseInt(editarCalifInput.value,10),
+        comentario:     editarComentario.value.trim(),
+        fecha:          new Date(editarFechaInput.value).toISOString()
+      };
+      let res = await fetch(API_RES + editingId, {
+        method:"PUT", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        let err = await res.json().catch(()=>null);
+        return alert("Error al editar:\n"+JSON.stringify(err?.detail||err||res.status,null,2));
       }
-    
+      modal.style.display = "none";
+      await fetchResenas();
+    }
   
+    // filtros y paginación
     function aplicarFiltros() {
-      const fR = filtroResta.value.toLowerCase();
-      const fC = filtroCalif.value.toLowerCase();
-      Array.from(tabla.rows).forEach(row => {
-        const rId = row.cells[1].textContent.toLowerCase();
-        const cal = row.cells[3].textContent.toLowerCase();
-        row.style.display = rId.includes(fR) && cal.includes(fC) ? "" : "none";
+      let fR = filtroResta.value.toLowerCase(),
+          fC = filtroCalif.value.toLowerCase();
+      Array.from(tabla.rows).forEach(r=>{
+        let tR = r.cells[1].textContent.toLowerCase(),
+            tC = r.cells[3].textContent.toLowerCase();
+        r.style.display = tR.includes(fR)&&tC.includes(fC) ? "" : "none";
       });
     }
-  
     function mostrarPagina(n) {
-      const start = (n-1)*perPage;
-      renderTable(data.slice(start, start+perPage));
+      let start = (n-1)*perPage;
+      renderTable(data.slice(start,start+perPage));
     }
-  
     function actualizarPaginacion() {
-      pagination.innerHTML = "";
-      const total = Math.ceil(data.length/perPage)||1;
-      for (let i=1; i<=total; i++) {
-        const b = document.createElement("button");
-        b.textContent = i;
-        b.className = "btn btn-outline-secondary me-1"+(i===page?" active":"");
-        b.addEventListener("click", ()=>{
-          page = i;
-          mostrarPagina(i);
+      pagination.innerHTML="";
+      let total = Math.ceil(data.length/perPage)||1;
+      for(let i=1;i<=total;i++){
+        let b=document.createElement("button");
+        b.textContent=i;
+        b.className="btn btn-outline-secondary me-1"+(i===page?" active":"");
+        b.onclick=()=>{
+          page=i; mostrarPagina(i);
           pagination.querySelectorAll("button").forEach(x=>x.classList.remove("active"));
           b.classList.add("active");
-        });
+        };
         pagination.appendChild(b);
       }
     }
