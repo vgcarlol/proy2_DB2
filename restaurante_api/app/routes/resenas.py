@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from bson import ObjectId
 from typing import List
 
@@ -112,3 +112,56 @@ async def resumen_resenas(skip: int = 0, limit: int = 100):
         {"usuario_id": 1, "restaurante_id": 1, "calificacion": 1, "_id": 0}
     ).sort("calificacion", -1).skip(skip).limit(limit)
     return await cursor.to_list(length=limit)
+@router.post("/bulk", response_model=List[Resena])
+async def crear_multiples_resenas(resenas: List[ResenaCreate]):
+    try:
+        resenas_dict = [r.model_dump(mode="python") for r in resenas]
+        result = await db.resenas.insert_many(resenas_dict)
+        insertadas = await db.resenas.find(
+            {"_id": {"$in": result.inserted_ids}}
+        ).to_list(length=len(result.inserted_ids))
+        return insertadas
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al insertar múltiples reseñas: {str(e)}")
+@router.delete("/bulk", response_model=dict)
+async def eliminar_multiples_resenas(ids: List[str] = Body(...)):
+    object_ids = []
+    for id in ids:
+        if not ObjectId.is_valid(id):
+            raise HTTPException(status_code=400, detail=f"ID inválido: {id}")
+        object_ids.append(ObjectId(id))
+
+    result = await db.resenas.delete_many({"_id": {"$in": object_ids}})
+    return {
+        "mensaje": "Reseñas eliminadas",
+        "cantidad_eliminada": result.deleted_count
+    }
+@router.put("/bulk", response_model=dict)
+async def actualizar_multiples_resenas(resenas: List[dict] = Body(...)):
+    actualizadas = 0
+    errores = []
+
+    for resena in resenas:
+        id = resena.get("_id")
+        if not id or not ObjectId.is_valid(id):
+            errores.append(f"ID inválido: {id}")
+            continue
+
+        obj_id = ObjectId(id)
+        cuerpo_actualizacion = {k: v for k, v in resena.items() if k != "_id"}
+
+        result = await db.resenas.update_one(
+            {"_id": obj_id},
+            {"$set": cuerpo_actualizacion}
+        )
+
+        if result.modified_count > 0:
+            actualizadas += 1
+        elif result.matched_count == 0:
+            errores.append(f"No se encontró la reseña con ID: {id}")
+
+    return {
+        "mensaje": "Actualización de reseñas completada",
+        "cantidad_actualizada": actualizadas,
+        "errores": errores
+    }

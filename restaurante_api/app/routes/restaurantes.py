@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from bson import ObjectId
 from typing import List
 from app.database import db
@@ -94,3 +94,53 @@ async def resumen_restaurantes(skip: int = 0, limit: int = 100):
     ).skip(skip).limit(limit)
     return await cursor.to_list(length=limit)
 
+@router.post("/bulk", response_model=List[Restaurante])
+async def crear_restaurantes_bulk(restaurantes: List[RestauranteCreate]):
+    try:
+        docs = [r.dict() for r in restaurantes]
+        result = await db.restaurantes.insert_many(docs)
+        nuevos = await db.restaurantes.find(
+            {"_id": {"$in": result.inserted_ids}}
+        ).to_list(length=len(result.inserted_ids))
+        return nuevos
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al insertar múltiples restaurantes: {str(e)}")
+from fastapi import Body
+
+@router.delete("/bulk", response_model=dict)
+async def eliminar_restaurantes_bulk(ids: List[str] = Body(...)):
+    object_ids = []
+    for id in ids:
+        if not ObjectId.is_valid(id):
+            raise HTTPException(status_code=400, detail=f"ID inválido: {id}")
+        object_ids.append(ObjectId(id))
+
+    result = await db.restaurantes.delete_many({"_id": {"$in": object_ids}})
+    return {
+        "mensaje": "Restaurantes eliminados",
+        "cantidad_eliminada": result.deleted_count
+    }
+@router.put("/bulk", response_model=dict)
+async def actualizar_restaurantes_bulk(actualizaciones: List[dict] = Body(...)):
+    actualizados = 0
+    errores = []
+
+    for r in actualizaciones:
+        id = r.get("_id")
+        if not id or not ObjectId.is_valid(id):
+            errores.append(f"ID inválido: {id}")
+            continue
+        campos = {k: v for k, v in r.items() if k != "_id"}
+        if not campos:
+            continue
+        result = await db.restaurantes.update_one(
+            {"_id": ObjectId(id)},
+            {"$set": campos}
+        )
+        actualizados += result.modified_count
+
+    return {
+        "mensaje": "Actualización de restaurantes completada",
+        "cantidad_actualizada": actualizados,
+        "errores": errores
+    }

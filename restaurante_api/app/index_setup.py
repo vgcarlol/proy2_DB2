@@ -1,5 +1,4 @@
 from app.database import db
-
 async def crear_indices():
     # Restaurantes
     await db.restaurantes.create_index({ "nombre": "text" })  # Búsqueda por texto
